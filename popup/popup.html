@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AutoResponder</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- 头部 -->
+    <header class="header">
+      <div class="header-left">
+        <h1>🔄 AutoResponder</h1>
+      </div>
+      <div class="header-right">
+        <label class="switch" title="启用/禁用">
+          <input type="checkbox" id="globalToggle" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </header>
+
+    <!-- 状态栏 -->
+    <div class="status-bar" id="statusBar">
+      <span class="status-dot active"></span>
+      <span id="statusText">已启用 - 0 条规则</span>
+    </div>
+
+    <!-- 工具栏 -->
+    <div class="toolbar">
+      <button class="btn btn-primary" id="addRuleBtn" title="添加规则">
+        ➕ 添加规则
+      </button>
+      <button class="btn btn-secondary" id="importBtn" title="导入规则">
+        📥 导入
+      </button>
+      <button class="btn btn-secondary" id="exportBtn" title="导出规则">
+        📤 导出
+      </button>
+      <button class="btn btn-secondary" id="logsBtn" title="查看日志">
+        📋 日志
+      </button>
+      <button class="btn btn-secondary" id="optionsBtn" title="高级设置">
+        ⚙️
+      </button>
+    </div>
+
+    <!-- 规则列表 -->
+    <div class="rules-container" id="rulesContainer">
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">📭</div>
+        <p>暂无规则</p>
+        <p class="empty-hint">点击"添加规则"开始拦截请求</p>
+      </div>
+      <div class="rules-list" id="rulesList"></div>
+    </div>
+
+    <!-- 添加/编辑规则表单 -->
+    <div class="modal" id="ruleModal" style="display:none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="modalTitle">添加规则</h2>
+          <button class="close-btn" id="closeModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>URL 匹配模式 <span class="required">*</span></label>
+            <div class="input-row">
+              <select id="matchType" class="select-small">
+                <option value="contains">包含</option>
+                <option value="exact">精确匹配</option>
+                <option value="prefix">前缀匹配</option>
+                <option value="suffix">后缀匹配</option>
+                <option value="regex">正则表达式</option>
+                <option value="wildcard">通配符</option>
+              </select>
+              <input type="text" id="urlPattern" placeholder="例如: api/users 或 *.js" class="input-flex">
+            </div>
+            <div class="help-text">
+              <span id="matchHelp">输入要匹配的URL部分</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>响应类型</label>
+            <select id="responseType">
+              <option value="html">HTML</option>
+              <option value="js">JavaScript</option>
+              <option value="css">CSS</option>
+              <option value="json">JSON</option>
+              <option value="xml">XML</option>
+              <option value="text">纯文本</option>
+              <option value="svg">SVG</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>资源类型过滤 <span class="optional">(可选)</span></label>
+            <div class="checkbox-group" id="resourceTypes">
+              <label><input type="checkbox" value="main_frame"> 主文档</label>
+              <label><input type="checkbox" value="sub_frame"> 子框架</label>
+              <label><input type="checkbox" value="script"> 脚本</label>
+              <label><input type="checkbox" value="stylesheet"> 样式表</label>
+              <label><input type="checkbox" value="xmlhttprequest"> XHR/Fetch</label>
+              <label><input type="checkbox" value="image"> 图片</label>
+              <label><input type="checkbox" value="font"> 字体</label>
+              <label><input type="checkbox" value="media"> 媒体</label>
+              <label><input type="checkbox" value="other"> 其他</label>
+            </div>
+            <div class="help-text">不选择则拦截所有类型</div>
+          </div>
+
+          <div class="form-group">
+            <label>
+              响应内容 <span class="required">*</span>
+              <button class="btn btn-small btn-secondary" id="loadFileBtn" title="从文件加载">
+                📁 从文件加载
+              </button>
+            </label>
+            <textarea id="responseContent" rows="12" placeholder="输入响应内容或从文件加载..."></textarea>
+            <input type="file" id="fileInput" style="display:none;" accept=".html,.htm,.js,.css,.json,.xml,.txt,.svg">
+          </div>
+
+          <div class="form-group">
+            <label>优先级</label>
+            <input type="number" id="priority" value="1" min="1" max="100">
+            <div class="help-text">数字越大优先级越高</div>
+          </div>
+
+          <div class="form-group">
+            <label>备注 <span class="optional">(可选)</span></label>
+            <input type="text" id="ruleNote" placeholder="规则说明...">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="cancelBtn">取消</button>
+          <button class="btn btn-primary" id="saveRuleBtn">保存规则</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 日志面板 -->
+    <div class="modal" id="logModal" style="display:none;">
+      <div class="modal-content modal-large">
+        <div class="modal-header">
+          <h2>拦截日志</h2>
+          <div>
+            <button class="btn btn-small btn-secondary" id="clearLogsBtn">清空</button>
+            <button class="close-btn" id="closeLogModal">&times;</button>
+          </div>
+        </div>
+        <div class="modal-body">
+          <div class="log-list" id="logList">
+            <div class="empty-state">暂无日志</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 导入面板 -->
+    <div class="modal" id="importModal" style="display:none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>导入规则</h2>
+          <button class="close-btn" id="closeImportModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>选择JSON文件或粘贴JSON内容</label>
+            <input type="file" id="importFileInput" accept=".json">
+            <textarea id="importContent" rows="8" placeholder='粘贴JSON格式的规则...'></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="cancelImportBtn">取消</button>
+          <button class="btn btn-primary" id="confirmImportBtn">导入</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

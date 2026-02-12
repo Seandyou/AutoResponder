@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AutoResponder - 高级设置</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔄 AutoResponder 高级设置</h1>
+      <p class="subtitle">管理规则、批量操作和高级配置</p>
+    </header>
+
+    <main>
+      <!-- 规则管理 -->
+      <section class="section">
+        <h2>📋 规则管理</h2>
+        <div class="section-content">
+          <div class="toolbar">
+            <button class="btn btn-primary" id="addRuleBtn">➕ 添加规则</button>
+            <button class="btn btn-secondary" id="importBtn">📥 导入规则</button>
+            <button class="btn btn-secondary" id="exportBtn">📤 导出规则</button>
+            <button class="btn btn-danger" id="clearAllBtn">🗑️ 清空所有</button>
+            <div class="toolbar-right">
+              <input type="text" id="searchInput" placeholder="🔍 搜索规则..." class="search-input">
+            </div>
+          </div>
+
+          <div class="rules-table-container">
+            <table class="rules-table" id="rulesTable">
+              <thead>
+                <tr>
+                  <th width="40">
+                    <input type="checkbox" id="selectAll" title="全选">
+                  </th>
+                  <th width="50">启用</th>
+                  <th>URL 模式</th>
+                  <th width="80">类型</th>
+                  <th width="80">匹配方式</th>
+                  <th width="80">内容大小</th>
+                  <th width="60">优先级</th>
+                  <th width="150">备注</th>
+                  <th width="120">操作</th>
+                </tr>
+              </thead>
+              <tbody id="rulesTableBody">
+              </tbody>
+            </table>
+            <div class="empty-state" id="emptyState">
+              <p>暂无规则，点击"添加规则"开始</p>
+            </div>
+          </div>
+
+          <div class="batch-actions" id="batchActions" style="display:none;">
+            <span id="selectedCount">0 条已选</span>
+            <button class="btn btn-small btn-secondary" id="batchEnableBtn">批量启用</button>
+            <button class="btn btn-small btn-secondary" id="batchDisableBtn">批量禁用</button>
+            <button class="btn btn-small btn-danger" id="batchDeleteBtn">批量删除</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 快速模板 -->
+      <section class="section">
+        <h2>⚡ 快速模板</h2>
+        <div class="section-content">
+          <div class="templates-grid">
+            <div class="template-card" data-template="empty-html">
+              <div class="template-icon">📄</div>
+              <div class="template-name">空白 HTML</div>
+              <div class="template-desc">返回空白HTML页面</div>
+            </div>
+            <div class="template-card" data-template="empty-js">
+              <div class="template-icon">📜</div>
+              <div class="template-name">空白 JS</div>
+              <div class="template-desc">返回空JS文件（阻止脚本）</div>
+            </div>
+            <div class="template-card" data-template="empty-css">
+              <div class="template-icon">🎨</div>
+              <div class="template-name">空白 CSS</div>
+              <div class="template-desc">返回空CSS文件</div>
+            </div>
+            <div class="template-card" data-template="json-mock">
+              <div class="template-icon">📦</div>
+              <div class="template-name">JSON Mock</div>
+              <div class="template-desc">返回模拟JSON数据</div>
+            </div>
+            <div class="template-card" data-template="404">
+              <div class="template-icon">🚫</div>
+              <div class="template-name">404 页面</div>
+              <div class="template-desc">返回404错误页面</div>
+            </div>
+            <div class="template-card" data-template="cors-json">
+              <div class="template-icon">🌐</div>
+              <div class="template-name">CORS JSON</div>
+              <div class="template-desc">带CORS头的JSON响应</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 使用说明 -->
+      <section class="section">
+        <h2>📖 使用说明</h2>
+        <div class="section-content help-content">
+          <div class="help-item">
+            <h3>URL 匹配模式</h3>
+            <table class="help-table">
+              <tr>
+                <td><code>包含</code></td>
+                <td>URL中包含指定文本即匹配。输入 <code>api/users</code> 会匹配所有包含此路径的请求</td>
+              </tr>
+              <tr>
+                <td><code>精确匹配</code></td>
+                <td>完全匹配整个URL</td>
+              </tr>
+              <tr>
+                <td><code>前缀匹配</code></td>
+                <td>URL以指定文本开头</td>
+              </tr>
+              <tr>
+                <td><code>后缀匹配</code></td>
+                <td>URL以指定文本结尾，如 <code>.js</code> 匹配所有JS文件</td>
+              </tr>
+              <tr>
+                <td><code>通配符</code></td>
+                <td>使用 <code>*</code> 匹配任意字符，如 <code>*://example.com/*/data.json</code></td>
+              </tr>
+              <tr>
+                <td><code>正则表达式</code></td>
+                <td>使用RE2语法的正则表达式，如 <code>https://api\.example\.com/v[0-9]+/.*</code></td>
+              </tr>
+            </table>
+          </div>
+
+          <div class="help-item">
+            <h3>工作原理</h3>
+            <p>本扩展使用 Chrome 的 <code>declarativeNetRequest</code> API 拦截网络请求，
+            将匹配的请求重定向到包含您指定内容的 Data URI。这意味着：</p>
+            <ul>
+              <li>拦截发生在网络层，性能优秀</li>
+              <li>支持拦截各种类型的请求（HTML、JS、CSS、XHR等）</li>
+              <li>响应内容通过 Base64 编码嵌入 Data URI</li>
+              <li>适合中小型文件（建议单个响应不超过 2MB）</li>
+            </ul>
+          </div>
+
+          <div class="help-item">
+            <h3>常见用途</h3>
+            <ul>
+              <li>🔧 <strong>前端调试</strong>：用本地修改的JS/CSS替换线上文件</li>
+              <li>🧪 <strong>API Mock</strong>：拦截API请求返回模拟数据</li>
+              <li>🚫 <strong>屏蔽资源</strong>：用空文件替换广告/追踪脚本</li>
+              <li>🎨 <strong>样式覆盖</strong>：注入自定义CSS修改页面样式</li>
+              <li>📝 <strong>页面替换</strong>：用自定义HTML替换整个页面</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>AutoResponder v1.0.0 | 灵感来自 Telerik Fiddler AutoResponder</p>
+    </footer>
+  </div>
+
+  <!-- 规则编辑模态框 (与popup中类似但更大) -->
+  <div class="modal" id="ruleModal" style="display:none;">
+    <div class="modal-content modal-wide">
+      <div class="modal-header">
+        <h2 id="modalTitle">添加规则</h2>
+        <button class="close-btn" id="closeModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>匹配方式</label>
+            <select id="matchType">
+              <option value="contains">包含</option>
+              <option value="exact">精确匹配</option>
+              <option value="prefix">前缀匹配</option>
+              <option value="suffix">后缀匹配</option>
+              <option value="regex">正则表达式</option>
+              <option value="wildcard">通配符</option>
+            </select>
+          </div>
+          <div class="form-group flex-3">
+            <label>URL 匹配模式 <span class="required">*</span></label>
+            <input type="text" id="urlPattern" placeholder="输入URL匹配模式...">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>响应类型</label>
+            <select id="responseType">
+              <option value="html">HTML</option>
+              <option value="js">JavaScript</option>
+              <option value="css">CSS</option>
+              <option value="json">JSON</option>
+              <option value="xml">XML</option>
+              <option value="text">纯文本</option>
+              <option value="svg">SVG</option>
+            </select>
+          </div>
+          <div class="form-group flex-1">
+            <label>优先级</label>
+            <input type="number" id="priority" value="1" min="1" max="100">
+          </div>
+          <div class="form-group flex-2">
+            <label>备注</label>
+            <input type="text" id="ruleNote" placeholder="规则说明...">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>资源类型过滤</label>
+          <div class="checkbox-group" id="resourceTypes">
+            <label><input type="checkbox" value="main_frame"> 主文档</label>
+            <label><input type="checkbox" value="sub_frame"> 子框架</label>
+            <label><input type="checkbox" value="script"> 脚本</label>
+            <label><input type="checkbox" value="stylesheet"> 样式表</label>
+            <label><input type="checkbox" value="xmlhttprequest"> XHR/Fetch</label>
+            <label><input type="checkbox" value="image"> 图片</label>
+            <label><input type="checkbox" value="font"> 字体</label>
+            <label><input type="checkbox" value="media"> 媒体</label>
+            <label><input type="checkbox" value="other"> 其他</label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>
+            响应内容 <span class="required">*</span>
+            <button class="btn btn-small btn-secondary" id="loadFileBtn">📁 从文件加载</button>
+            <button class="btn btn-small btn-secondary" id="formatBtn">🔧 格式化</button>
+          </label>
+          <textarea id="responseContent" rows="18" placeholder="输入响应内容..."></textarea>
+          <input type="file" id="fileInput" style="display:none;" accept=".html,.htm,.js,.css,.json,.xml,.txt,.svg">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelBtn">取消</button>
+        <button class="btn btn-primary" id="saveRuleBtn">💾 保存规则</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>
